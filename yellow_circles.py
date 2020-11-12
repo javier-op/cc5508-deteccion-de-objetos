@@ -44,6 +44,11 @@ def filter_by_error(ccs, threshold):
             output.append(cc)
     return output
 
+def write_cc(cc, f):
+    for key in cc:
+        f.write('{}: {}\n'.format(key, cc[key]))
+    f.write('\n')
+
 def draw_all_lbbs(image, ccs, box_rgb_color):
     for cc in ccs:
         y, x, h, w = cc['bbox']
@@ -61,11 +66,16 @@ if __name__ == '__main__':
     input_image = imread(sys.argv[1])
     yellow = get_yellow(input_image)
     yellow_binary = threshold(yellow, get_threshold_otsu(yellow))
+    imsave('yellow_binary.png', np.interp(yellow_binary, (yellow_binary.min(), yellow_binary.max()), (0, 255)).astype(np.uint8))
     yellow_ccs = get_ccomponents(yellow_binary)
     yellow_ccs = remove_small_components(yellow_ccs, 50)
+    with open('yellow_ccs.txt', 'w') as f:
+        for cc in yellow_ccs:
+            write_cc(cc, f)
     yellow_ccs = [add_error_to_circle(cc) for cc in yellow_ccs]
     yellow_circle_ccs = filter_by_error(yellow_ccs, 0.1)
     image_with_boxes = draw_all_lbbs(input_image, yellow_circle_ccs, (255, 0, 0))
+    imsave('output.png', image_with_boxes)
     plt.imshow(image_with_boxes)
     plt.axis('off')
     plt.show()
